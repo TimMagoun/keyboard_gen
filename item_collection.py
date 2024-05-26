@@ -1,21 +1,20 @@
-from fileinput import close
-from solid import *
-from solid.utils import *
+from solid import (
+    union,
+    polygon,
+)
+
 
 # import graphviz
 
 import logging
-import sys
 
 from switch import Switch
-from support import Support
-from support_cutout import SupportCutout
 from cell import Cell
 
 
 class ItemCollection:
-    def __init__(self, rotation = 0.0):
-        
+    def __init__(self, rotation=0.0):
+
         self.logger = logging.getLogger().getChild(__name__)
 
         self.collection = {}
@@ -28,11 +27,10 @@ class ItemCollection:
         # self.dot_recurse = graphviz.Digraph()
         # self.dot = graphviz.Digraph()
 
-
-    def get_collection_dict(self, rx = 0.0, ry = 0.0):
+    def get_collection_dict(self, rx=0.0, ry=0.0):
         return self.collection[rx][ry]
-    
-    def add_item(self, x_offset, y_offset, cell: Cell, rx = 0.0, ry = 0.0):
+
+    def add_item(self, x_offset, y_offset, cell: Cell, rx=0.0, ry=0.0):
         if rx not in self.collection.keys():
             self.collection[rx] = {}
 
@@ -43,12 +41,13 @@ class ItemCollection:
             self.collection[rx][ry][x_offset] = {}
 
         if rx != 0.0 or ry != 0.0:
-            self.logger.debug('Adding item to collection with rx = {}, ry = {}'.format(rx, ry))
+            self.logger.debug(
+                "Adding item to collection with rx = {}, ry = {}".format(rx, ry)
+            )
 
         self.collection[rx][ry][x_offset][y_offset] = cell
 
-
-    def get_item(self, x_offset, y_offset, rx = 0.0, ry = 0.0) -> Cell:
+    def get_item(self, x_offset, y_offset, rx=0.0, ry=0.0) -> Cell:
         return self.collection[rx][ry][x_offset][y_offset]
 
     def get_item_with_value(self, value):
@@ -61,23 +60,23 @@ class ItemCollection:
                         if current_switch.cell_value == value:
                             return current_switch
 
-    def get_moved_item(self, x_offset, y_offset, rx = 0.0, ry = 0.0) -> Cell:
+    def get_moved_item(self, x_offset, y_offset, rx=0.0, ry=0.0) -> Cell:
         return self.collection[rx][ry][x_offset][y_offset].get_moved()
 
-    def collection_has_keys(self, rx = 0.0, ry = None, x = None, y = None):
+    def collection_has_keys(self, rx=0.0, ry=None, x=None, y=None):
         if rx not in self.collection.keys():
-            self.logger.debug('Collection has no rx = {}'.format(rx))
+            self.logger.debug("Collection has no rx = {}".format(rx))
             return False
         if ry is not None and ry not in self.collection[rx].keys():
-            self.logger.debug('Collection has no ry = {}'.format(ry))
+            self.logger.debug("Collection has no ry = {}".format(ry))
             return False
         if x is not None and x not in self.collection[rx][ry].keys():
-            self.logger.debug('Collection has no x = {}'.format(x))
+            self.logger.debug("Collection has no x = {}".format(x))
             return False
         if y is not None and y not in self.collection[rx][ry][x].keys():
-            self.logger.debug('Collection has no y = {}'.format(y))
+            self.logger.debug("Collection has no y = {}".format(y))
             return False
-        
+
         return True
 
     def get_rx_list(self):
@@ -89,54 +88,53 @@ class ItemCollection:
         else:
             return []
 
-    def get_x_list_in_rx_ry(self, rx = 0.0, ry = 0.0):
+    def get_x_list_in_rx_ry(self, rx=0.0, ry=0.0):
         if self.collection_has_keys(rx, ry):
             return self.collection[rx][ry].keys()
         else:
             return []
-    def get_y_list_in_rx_ry_x(self, x, rx = 0.0, ry = 0.0):
+
+    def get_y_list_in_rx_ry_x(self, x, rx=0.0, ry=0.0):
         if self.collection_has_keys(rx, ry, x):
             return self.collection[rx][ry][x].keys()
         else:
             return []
 
-    def get_x_list(self, rx = 0.0, ry = 0.0):
+    def get_x_list(self, rx=0.0, ry=0.0):
         return self.get_x_list_in_rx_ry(rx, ry)
 
-
-    def get_sorted_x_list(self, rx = 0.0, ry = 0.0):
+    def get_sorted_x_list(self, rx=0.0, ry=0.0):
         return sorted(self.get_x_list(rx, ry))
 
-    def get_y_list_in_x(self, x, rx = 0.0, ry = 0.0):
+    def get_y_list_in_x(self, x, rx=0.0, ry=0.0):
         return self.get_y_list_in_rx_ry_x(x, rx, ry)
 
-    def get_sorted_y_list_in_x(self, x, rx = 0.0, ry = 0.0):
+    def get_sorted_y_list_in_x(self, x, rx=0.0, ry=0.0):
         return sorted(self.get_y_list_in_x(x, rx, ry))
 
-    def get_min_x(self, rx = 0.0, ry = 0.0):
+    def get_min_x(self, rx=0.0, ry=0.0):
         return min(self.get_x_list(rx, ry))
 
-    def get_max_x(self, rx = 0.0, ry = 0.0):
+    def get_max_x(self, rx=0.0, ry=0.0):
         return max(self.get_x_list(rx, ry))
-        
-    def get_min_y(self, rx = 0.0, ry = 0.0):
+
+    def get_min_y(self, rx=0.0, ry=0.0):
         min_y = 0
-        
+
         for x in self.get_x_list(rx, ry):
             col_min_y = min(self.get_y_list_in_rx_ry_x(x, rx, ry))
 
             if col_min_y < min_y:
-                min_y = col_min_y    
+                min_y = col_min_y
         return min_y
 
-    def get_collection_bounds(self, rx = 0.0, ry = 0.0) -> float:
-        
+    def get_collection_bounds(self, rx=0.0, ry=0.0) -> float:
 
         min_y = 1000.0
         max_y = -1000.0
         max_x = -1000.0
         min_x = 1000.0
-        
+
         for x in self.get_x_list(rx, ry):
             for y in self.get_y_list_in_x(x, rx, ry):
                 cell = self.get_item(x, y, rx, ry)
@@ -158,11 +156,12 @@ class ItemCollection:
                 if end_y < min_y:
                     min_y = end_y
 
-        self.logger.debug('min_x: %f, max_x: %f, max_y: %f, min_y: %f', min_x, max_x, max_y, min_y)
+        self.logger.debug(
+            "min_x: %f, max_x: %f, max_y: %f, min_y: %f", min_x, max_x, max_y, min_y
+        )
         return (min_x, max_x, max_y, min_y)
 
-
-    def get_moved_union(self, rx = 0.0, ry = 0.0):
+    def get_moved_union(self, rx=0.0, ry=0.0):
         solid = union()
 
         for x in self.get_x_list_in_rx_ry(rx, ry):
@@ -171,46 +170,41 @@ class ItemCollection:
                 solid += temp_solid
         return solid
 
-    
-    def set_collection_neighbors(self, neighbor_group = 'local'):
-        
+    def set_collection_neighbors(self, neighbor_group="local"):
 
-        self.logger.debug('Set %s neighbors', neighbor_group)
+        self.logger.debug("Set %s neighbors", neighbor_group)
         for rx in self.get_rx_list():
             for ry in self.get_ry_list_in_rx(rx):
                 for x in self.get_x_list_in_rx_ry(rx, ry):
                     for y in self.get_y_list_in_rx_ry_x(x, rx, ry):
                         current_switch: Switch
                         current_switch = self.get_item(x, y, rx, ry)
-                        all_neighbors_set = current_switch.get_all_neighbors_set(neighbor_group = neighbor_group)
-                        if all_neighbors_set == False:
-                            # self.logger.debug('set_collection_neighbors call set_item_neighbor for switch %s', str(current_switch))
-                            self.set_item_neighbor(current_switch, neighbor_group = neighbor_group)
+                        all_neighbors_set = current_switch.get_all_neighbors_set(
+                            neighbor_group=neighbor_group
+                        )
+                        if not all_neighbors_set:
+                            # self.logger.debug('set_collection_neighbors call set_item_neighbor
+                            # for switch %s', str(current_switch))
+                            self.set_item_neighbor(
+                                current_switch, neighbor_group=neighbor_group
+                            )
 
-    
-    
-    def set_item_neighbor(self, item: Switch, neighbor_group = 'local', tabs = ''):
+    def set_item_neighbor(self, item: Switch, neighbor_group="local", tabs=""):
         # self.logger.debug('%sSet neighbors for switch %s', tabs, str(item))
-        
+
         x_min = item.x
         x_max = item.x + item.w
         y_min = item.y - item.h
         y_max = item.y
 
-        neighbor_list_dict = {
-            'right': [],
-            'left': [],
-            'top': [],
-            'bottom': []
-        }
+        neighbor_list_dict = {"right": [], "left": [], "top": [], "bottom": []}
 
-        neighbor_oposite_dict = {
-            'right': 'left',
-            'left': 'right',
-            'top': 'bottom',
-            'bottom': 'top'
-        }
-
+        # neighbor_oposite_dict = {
+        #     "right": "left",
+        #     "left": "right",
+        #     "top": "bottom",
+        #     "bottom": "top",
+        # }
 
         for sib_rx in self.get_rx_list():
             for sib_ry in self.get_ry_list_in_rx(sib_rx):
@@ -224,81 +218,122 @@ class ItemCollection:
                         sib_y_max = sibling_switch.y
 
                         # check right neighbor
-                        if sib_y_max > y_min and sib_y_min < y_max and sib_x_min >= x_max:
-                            neighbor_list_dict['right'].append(sibling_switch)
+                        if (
+                            sib_y_max > y_min
+                            and sib_y_min < y_max
+                            and sib_x_min >= x_max
+                        ):
+                            neighbor_list_dict["right"].append(sibling_switch)
                             # right_neighbor_offset = sib_x_min - x_max
                         # check left neighbor
-                        if sib_y_max > y_min and sib_y_min < y_max and sib_x_max <= x_min:
-                            neighbor_list_dict['left'].append(sibling_switch)
+                        if (
+                            sib_y_max > y_min
+                            and sib_y_min < y_max
+                            and sib_x_max <= x_min
+                        ):
+                            neighbor_list_dict["left"].append(sibling_switch)
                             # left_neighbor_offset = x_min - sib_x_max
                         # check top neighbor
-                        if sib_x_max > x_min and sib_x_min < x_max and sib_y_min >= y_max:
-                            neighbor_list_dict['top'].append(sibling_switch)
+                        if (
+                            sib_x_max > x_min
+                            and sib_x_min < x_max
+                            and sib_y_min >= y_max
+                        ):
+                            neighbor_list_dict["top"].append(sibling_switch)
                             # top_neighbor_offset = sib_y_min - y_max
                         # check bottom neighbor
-                        if sib_x_max > x_min and sib_x_min < x_max and sib_y_max <= y_min:
-                            neighbor_list_dict['bottom'].append(sibling_switch)
+                        if (
+                            sib_x_max > x_min
+                            and sib_x_min < x_max
+                            and sib_y_max <= y_min
+                        ):
+                            neighbor_list_dict["bottom"].append(sibling_switch)
                             # bottom_neighbor_offset = y_min - sib_y_max
-        
 
         for direction in neighbor_list_dict.keys():
             # self.logger.debug('direction: %s', direction)
             offset = 0.0
-            
-            if len(neighbor_list_dict[direction]) > 0: 
+
+            if len(neighbor_list_dict[direction]) > 0:
                 closest_neighbor: Switch = None
 
-                if direction == 'right':
-                    closest_neighbor = min(neighbor_list_dict[direction], key=lambda item: item.x)
+                if direction == "right":
+                    closest_neighbor = min(
+                        neighbor_list_dict[direction], key=lambda item: item.x
+                    )
                     offset = closest_neighbor.x_min - x_max
                     perp_offset = closest_neighbor.y - item.y
-                elif direction == 'left':
-                    closest_neighbor = max(neighbor_list_dict[direction], key=lambda item: item.x)
+                elif direction == "left":
+                    closest_neighbor = max(
+                        neighbor_list_dict[direction], key=lambda item: item.x
+                    )
                     offset = x_min - closest_neighbor.x_max
                     perp_offset = closest_neighbor.y - item.y
-                elif direction == 'top':
-                    closest_neighbor = min(neighbor_list_dict[direction], key=lambda item: item.y)
+                elif direction == "top":
+                    closest_neighbor = min(
+                        neighbor_list_dict[direction], key=lambda item: item.y
+                    )
                     offset = closest_neighbor.y_min - y_max
                     perp_offset = closest_neighbor.x - item.x
-                elif direction == 'bottom':
-                    closest_neighbor = max(neighbor_list_dict[direction], key=lambda item: item.y)
+                elif direction == "bottom":
+                    closest_neighbor = max(
+                        neighbor_list_dict[direction], key=lambda item: item.y
+                    )
                     offset = y_min - closest_neighbor.y_max
                     perp_offset = closest_neighbor.x - item.x
 
-                item.set_neighbor(neighbor = closest_neighbor, neighbor_name = direction, offset = offset, neighbor_group = neighbor_group, perp_offset = perp_offset)
-                closest_neighbor.set_neighbor(neighbor = item, neighbor_name = Switch.NEIGHBOR_OPOSITE_DICT[direction], offset = offset, neighbor_group = neighbor_group, perp_offset = perp_offset)
-                closest_neighbor.update_all_neighbors_set(neighbor_group = neighbor_group)
+                item.set_neighbor(
+                    neighbor=closest_neighbor,
+                    neighbor_name=direction,
+                    offset=offset,
+                    neighbor_group=neighbor_group,
+                    perp_offset=perp_offset,
+                )
+                closest_neighbor.set_neighbor(
+                    neighbor=item,
+                    neighbor_name=Switch.NEIGHBOR_OPOSITE_DICT[direction],
+                    offset=offset,
+                    neighbor_group=neighbor_group,
+                    perp_offset=perp_offset,
+                )
+                closest_neighbor.update_all_neighbors_set(neighbor_group=neighbor_group)
             else:
                 # self.logger.debug('set switch %s no neighbor %s', str(item), direction)
                 closest_neighbor = None
-                item.set_neighbor(neighbor_name = direction, has_neighbor = False, neighbor_group = neighbor_group)
+                item.set_neighbor(
+                    neighbor_name=direction,
+                    has_neighbor=False,
+                    neighbor_group=neighbor_group,
+                )
 
-        item.update_all_neighbors_set(neighbor_group = neighbor_group)
+        item.update_all_neighbors_set(neighbor_group=neighbor_group)
 
-        all_neighbors_set = item.get_all_neighbors_set(neighbor_group = neighbor_group)
+        all_neighbors_set = item.get_all_neighbors_set(neighbor_group=neighbor_group)
 
         # pos = '%f,%f!' % (item.center_x, item.center_y)
         # self.dot_recurse.node(item.cell_value, pos = pos)
 
-        if all_neighbors_set == True:
+        if all_neighbors_set:
             for direction in neighbor_list_dict.keys():
                 neighbor: Switch
-                neighbor = item.get_neighbor(direction, neighbor_group = neighbor_group)
+                neighbor = item.get_neighbor(direction, neighbor_group=neighbor_group)
 
                 if neighbor is not None:
-                    neighbor_all_neighbors_set = neighbor.get_all_neighbors_set(neighbor_group = neighbor_group)
+                    neighbor_all_neighbors_set = neighbor.get_all_neighbors_set(
+                        neighbor_group=neighbor_group
+                    )
 
-                    if neighbor_all_neighbors_set == False:
+                    if not neighbor_all_neighbors_set:
                         # self.logger.debug('\t\tset neighbors for neighbor switch %s', str(neighbor))
                         # pos = '%f,%f!' % (neighbor.center_x, neighbor.center_y)
                         # self.dot_recurse.node(neighbor.cell_value, pos = pos)
                         # self.dot_recurse.edge(item.cell_value, neighbor.cell_value)
 
-                        self.set_item_neighbor(neighbor, neighbor_group = neighbor_group, tabs = tabs + ' ')
+                        self.set_item_neighbor(
+                            neighbor, neighbor_group=neighbor_group, tabs=tabs + " "
+                        )
 
-
-
-    def draw_rotated_items(self, rx = 0.0, ry = 0.0):
+    def draw_rotated_items(self, rx=0.0, ry=0.0):
         solid = union()
 
         for x in self.get_x_list_in_rx_ry(rx, ry):
@@ -311,26 +346,21 @@ class ItemCollection:
                 rotated_polygon = polygon(poly_points, poly_path)
 
                 solid += rotated_polygon
-                
+
         return solid
 
-
-
     def render_graph(self, output_filename):
-        
 
         # self.dot.render(output_filename, engine = 'neato')
 
-        filename = output_filename.name.replace('.gv', '_recurse.gv')
-        path = output_filename.parent
-        self.logger.debug('type(output_filename): %s', str(type(output_filename)))
+        # filename = output_filename.name.replace(".gv", "_recurse.gv")
+        # path = output_filename.parent
+        self.logger.debug("type(output_filename): %s", str(type(output_filename)))
 
         # self.dot_recurse.render(path / filename, engine = 'neato')
 
+    def neighbor_check(self, neighbor_group="local", output_filename=""):
 
-    def neighbor_check(self, neighbor_group = 'local', output_filename = ''):
-        
-        
         # self.dot = graphviz.Digraph(comment='Keyboard')
         for rx in self.get_rx_list():
             for ry in self.get_ry_list_in_rx(rx):
@@ -346,7 +376,9 @@ class ItemCollection:
 
                         for direction in item.get_neighbor_direction_list():
                             reverse_direction = Switch.NEIGHBOR_OPOSITE_DICT[direction]
-                            neighbor: Switch = item.get_neighbor(direction, neighbor_group = neighbor_group)
+                            neighbor: Switch = item.get_neighbor(
+                                direction, neighbor_group=neighbor_group
+                            )
 
                             if neighbor is not None:
                                 neighbor_cell_value = neighbor.cell_value
@@ -354,16 +386,27 @@ class ItemCollection:
                                 # self.dot.node(neighbor_cell_value, pos = pos)
                                 # self.dot.edge(item_cell_value, neighbor_cell_value)
 
-                                reverse_neighbor: Switch = neighbor.get_neighbor(reverse_direction, neighbor_group = neighbor_group)
+                                reverse_neighbor: Switch = neighbor.get_neighbor(
+                                    reverse_direction, neighbor_group=neighbor_group
+                                )
 
-                                reverse_neighbor_cell_value = reverse_neighbor.cell_value
+                                reverse_neighbor_cell_value = (
+                                    reverse_neighbor.cell_value
+                                )
 
                                 if item_cell_value != reverse_neighbor_cell_value:
-                                    self.logger.debug('Cell "%s" %s neighbor "%s" reverse neighbor %s has has different value %s', item_cell_value, direction, neighbor_cell_value, reverse_direction, reverse_neighbor_cell_value)
-        
+                                    self.logger.debug(
+                                        'Cell "%s" %s neighbor "%s" reverse neighbor %s has has different value %s',
+                                        item_cell_value,
+                                        direction,
+                                        neighbor_cell_value,
+                                        reverse_direction,
+                                        reverse_neighbor_cell_value,
+                                    )
+
         # self.dot.render(output_filename, engine = 'neato')
 
-    def has_global_neighbor_section(self, neighbor_name = ''):
+    def has_global_neighbor_section(self, neighbor_name=""):
         for rx in self.get_rx_list():
             for ry in self.get_ry_list_in_rx(rx):
                 for x in self.get_x_list_in_rx_ry(rx, ry):
@@ -371,15 +414,18 @@ class ItemCollection:
                         item: Switch
                         item = self.get_item(x, y, rx, ry)
 
-                        local_neighbor = item.get_neighbor(neighbor_name, neighbor_group = 'local')
-                        global_neighbor = item.get_neighbor(neighbor_name, neighbor_group = 'global')
+                        local_neighbor = item.get_neighbor(
+                            neighbor_name, neighbor_group="local"
+                        )
+                        global_neighbor = item.get_neighbor(
+                            neighbor_name, neighbor_group="global"
+                        )
 
                         if local_neighbor is None and global_neighbor is not None:
                             return True
 
-
     def has_global_right_neighbor_section(self):
-        return self.has_global_neighbor_section(neighbor_name = 'right')
-    
+        return self.has_global_neighbor_section(neighbor_name="right")
+
     def has_global_left_neighbor_section(self):
-        return self.has_global_neighbor_section(neighbor_name = 'left')
+        return self.has_global_neighbor_section(neighbor_name="left")
