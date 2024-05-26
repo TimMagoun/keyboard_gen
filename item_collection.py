@@ -3,9 +3,7 @@ from solid import (
     polygon,
 )
 
-
 # import graphviz
-
 import logging
 
 from switch import Switch
