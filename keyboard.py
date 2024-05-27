@@ -1,10 +1,6 @@
 import math
 import logging
-from solid import (
-    union,
-    cube,
-    rotate,
-)
+from solid import union, cube, rotate
 
 from solid.utils import right, back, forward, down, left, up, translate
 

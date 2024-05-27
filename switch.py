@@ -1,10 +1,6 @@
-from solid import (
-    polygon,
-    linear_extrude,
-    rotate,
-)
+from solid import polygon, linear_extrude, rotate, mirror
 
-from solid.utils import right, back, down, mirror
+from solid.utils import right, back, down
 
 
 import logging

@@ -1,7 +1,4 @@
-from solid import (
-    union,
-    rotate,
-)
+from solid import union, rotate
 
 from solid.utils import right, back
 

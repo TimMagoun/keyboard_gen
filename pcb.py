@@ -1,9 +1,6 @@
 # from ast import Param
 
-from solid import (
-    union,
-    cube,
-)
+from solid import union, cube
 
 from solid.utils import right, forward, down
 

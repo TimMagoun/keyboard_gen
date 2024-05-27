@@ -1,17 +1,9 @@
 import logging
 
 from parameters import Parameters
-from solid import (
-    union,
-    cube,
-    cylinder,
-    polygon,
-    linear_extrude,
-    rotate,
-    scale,
-)
+from solid import union, cube, cylinder, polygon, linear_extrude, rotate, scale, mirror
 
-from solid.utils import right, back, forward, down, mirror, up
+from solid.utils import right, back, forward, down, up
 
 
 class Cable:

@@ -1,7 +1,4 @@
-from solid import (
-    union,
-    polygon,
-)
+from solid import union, polygon
 
 # import graphviz
 import logging

@@ -1,6 +1,4 @@
-from solid import (
-    cube,
-)
+from solid import cube
 
 from solid.utils import right, back, down
 

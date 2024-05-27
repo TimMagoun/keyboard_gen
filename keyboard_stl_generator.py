@@ -4,18 +4,14 @@ import argparse
 from asyncio import subprocess
 import json
 
+from file_io import config_logger, load_keyboard_layout, make_output_folder
+
 # import math
 from pathlib import Path
-import re
 import logging
-import os
-
-# import os.path
 
 # import time
-from solid import (
-    union,
-)
+from solid import union
 
 from solid.utils import right, up
 
@@ -30,50 +26,14 @@ console_logging_level = logging.WARN
 file_logging_level = logging.DEBUG
 
 
-# Get root logger and set main logger level to DEBUG
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-
-# Create formatters
-console_formatter = logging.Formatter(
-    "%(name)s %(levelname)s: %(funcName)s: [%(lineno)d]: %(message)s"
-)
-file_formatter = logging.Formatter(
-    "%(asctime)s %(levelname)s %(name)s: %(funcName)s: [%(lineno)d]: %(message)s"
-)
-
-# Create console handler and set level to info
-console_handler = logging.StreamHandler()
-console_handler.setLevel(console_logging_level)
-
-# Add formatter to console_handler
-console_handler.setFormatter(console_formatter)
-
-# Add console handler to logger
-logger.addHandler(console_handler)
-
-# Get file info that will be used to creat log file
-script_location = Path(os.path.dirname(os.path.realpath(__file__)))
-log_file_name = "generator.log"
-log_file_path = script_location / log_file_name
-
-# Create file handler and set level to info
-file_handler = logging.FileHandler(log_file_path, mode="w")
-file_handler.setLevel(file_logging_level)
-
-# Add formatter to file_handler
-file_handler.setFormatter(file_formatter)
-
-# Add file handler to logger
-logger.addHandler(file_handler)
+logger = config_logger(console_logging_level, file_logging_level)
 
 
 # Helper for parser to wnsure filename argument has to correct extension
 def CheckExt(choices):
     class Act(argparse.Action):
         def __call__(self, parser, namespace, fname, option_string=None):
-            ext = os.path.splitext(fname)[1][1:]
+            ext = Path(fname).suffix[1:].lower()
             if ext not in choices:
                 option_string = "({})".format(option_string) if option_string else ""
                 parser.error(
@@ -98,8 +58,13 @@ def main():
         required=True,
         action=CheckExt({"json"}),
     )
-    # parser.add_argument('-o', '--output-folder', metavar = 'scad', help = 'A path to a folder
-    # to store the generated open scad file')
+    parser.add_argument(
+        "-o",
+        "--output-folder",
+        default="output",
+        help="A path to a folder to store the generated files",
+    )
+
     parser.add_argument(
         "-p",
         "--parameter-file",
@@ -158,146 +123,27 @@ def main():
 
     # Create Path object from input file argument
     input_file_path = Path(args.input_file)
-
-    # Get base folder path
-    base_path = input_file_path.parent
-
-    # Get input file name onle
-    file_name_only = input_file_path.name
-
-    # Get layout name from file name
     layout_name = input_file_path.stem
-
-    # Generate output scad and stl output folder paths
-    output_base_folder = base_path / layout_name
-    scad_folder_path = output_base_folder / "scad"
-    stl_folder_path = output_base_folder / "stl"
-
-    # Ensure all outpur folders exists
-    if not output_base_folder.is_dir():
-        output_base_folder.mkdir()
-
-    if not scad_folder_path.is_dir():
-        scad_folder_path.mkdir()
-
-    if not stl_folder_path.is_dir():
-        stl_folder_path.mkdir()
-
-    logger.debug("layout_name: %s", str(layout_name))
-    logger.debug("base_path: %s", str(base_path))
-    logger.debug("file_name_only: %s", str(file_name_only))
+    scad_folder_path, stl_folder_path = make_output_folder(
+        args.output_folder, layout_name
+    )
+    logger.debug("scad_folder_path: %s", scad_folder_path)
+    logger.debug("stl_folder_path: %s", stl_folder_path)
 
     # define output file extensions
     scad_postfix = ".scad"
     stl_postfix = ".stl"
 
-    # Set fragments per circle
-    FRAGMENTS = args.fragments
-    logger.debug("\tFragments: %d", FRAGMENTS)
-
-    # Pattern and Replacement strings to be used when trying to turn keyboard-layout-editor raw output into valid JSON
-    json_key_pattern = "([{,])([xywha1]+):"
-    json_key_replace = '\\1"\\2":'
-
     # Open JSON layout file
     logger.debug("Open layout file %s", input_file_path)
-    try:
-        # Try with utf-8 encoding specified
-        f = open(input_file_path, encoding="utf-8")
-    except Exception as e:
-        # Failed to open
-        logger.info(
-            "Failed to open layout file with utf-8 encoding specified. Try opening without specifying an encoding"
-        )
-        logger.error(e)
-        try:
-            # Try opening with no encoding spcificed
-            f = open(input_file_path)
-        except Exception as e:
-            logger.error(
-                "Failed to open layout file both spefifying utf-8 andcoding and not specifying any encodeing. Exiting"
-            )
-            logger.error(e)
-            exit(1)
-
-    logger.debug("Read layout JSON string from file %s", input_file_path)
-    try:
-        keyboard_layout = f.read()
-    except UnicodeDecodeError:
-        logger.error("Unable to decode layout file. Please provide utf-8 encoded files")
-        exit(-1)
-
-    keyboard_layout_dict = None
-
-    # Load keyboard layout dictionary
-    logger.debug("Parse layout file JSON string")
-    try:
-        # Attempt to parse to provided JSON string
-        keyboard_layout_dict = json.loads(keyboard_layout)
-        logger.debug("Valid Json Parsed")
-    except Exception as e:
-        # Failed to parse the JSON test.
-        # This most likely means that the keybaord-layout-editor raw output was provided
-        # Attempt to modify that string to make it valid JSON
-        keyboard_layout = "[%s]" % (keyboard_layout)
-        keyboard_layout = re.sub(json_key_pattern, json_key_replace, keyboard_layout)
-        logger.error(e)
-        try:
-            keyboard_layout_dict = json.loads(keyboard_layout)
-            logger.info("Initial layout Json Invalid. Json modified and parsed")
-        except Exception as e:
-            logger.error(e)
-            logger.error("Failed to parse layout json after attempt at correction.")
-            raise
-
+    keyboard_layout_dict = load_keyboard_layout(input_file_path)
     logger.debug("keyboard_layout_dict: %s", str(keyboard_layout_dict))
 
     # Read parameter file
-    parameter_dict = None
+    parameter_dict = {}
     if args.parameter_file is not None:
-        # Open JSON parameter file
-        logger.debug("Open parameter file %s", args.parameter_file)
-        try:
-            # Try with utf-8 encoding specified
-            f = open(args.parameter_file, encoding="utf-8")
-        except Exception as e:
-            # Failed to open
-            logger.info(
-                "Failed to open parameter file with utf-8 encoding specified. "
-                "Try opening without specifying an encoding"
-            )
-            logger.error(e)
-            try:
-                # Try opening with no encoding spcificed
-                f = open(args.parameter_fil)
-            except Exception as e:
-                logger.error(
-                    "Failed to open parameter file both spefifying utf-8 andcoding and not "
-                    "specifying any encodeing. Exiting"
-                )
-                logger.error(e)
-                exit(1)
-
-        logger.debug("Read JSON string from parameter file %s", args.parameter_file)
-        try:
-            parameter_file_text = f.read()
-        except UnicodeDecodeError:
-            logger.error(
-                "Unable to decode parameter file. Please provide utf-8 encoded files"
-            )
-            exit(-1)
-
-        logger.debug("Parse parameter JSON string")
-        try:
-            parameter_dict = json.loads(parameter_file_text)
-            logger.debug("Valid Json Parsed")
-        except Exception as e:
-            logger.error("Failed to parse parameter JSON file.")
-            logger.error(e)
-            raise
-
-        logger.debug("parameter_dict: %s", str(parameter_dict))
-
+        with open(args.parameter_file) as f:
+            parameter_dict = json.load(f)
     # Set parameters from imput file
     parameters = Parameters(parameter_dict)
 
@@ -455,13 +301,14 @@ def main():
                 + stl_postfix
             )
 
+            # Set fragments to be used when creating curves
             if solid_object_dict[section][part_name] is not None:
                 logger.info("Generate scad file with name %s", scad_file_name)
                 # Generate SCAD file from assembly
                 scad_render_to_file(
                     solid_object_dict[section][part_name],
                     scad_file_name,
-                    file_header=f"$fn = {FRAGMENTS};",
+                    file_header=f"$fn = {args.fragments};",
                 )
                 print("Generated scad file with name", scad_file_name)
 
